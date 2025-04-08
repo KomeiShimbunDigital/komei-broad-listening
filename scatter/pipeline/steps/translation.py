@@ -8,7 +8,7 @@ from utils import messages
 
 JAPANESE_UI_MAP = {
     "Argument": "議論",
-    # "Original comment": "元のコメント",
+    "Original comment": "元のコメント",
     "Representative arguments": "代表的な議論",
     "Open full-screen map": "全画面地図を開く",
     "Back to report": "レポートに戻る",
@@ -70,7 +70,7 @@ def translation(config):
 
     UI_copy = [
         "Argument",
-        # "Original comment",
+        "Original comment",
         "Representative arguments",
         "Open full-screen map",
         "Back to report",
