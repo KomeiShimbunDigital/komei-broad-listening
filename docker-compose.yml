@@ -1,0 +1,13 @@
+version: '3'
+services:
+  broad-listening:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./scatter/pipeline/configs:/app/scatter/pipeline/configs
+      - ./scatter/pipeline/prompts:/app/scatter/pipeline/prompts
+      - ./scatter/pipeline/inputs:/app/scatter/pipeline/inputs
+      - ./scatter/pipeline/outputs:/app/scatter/pipeline/outputs
+    stdin_open: true
+    tty: true
