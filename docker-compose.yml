@@ -8,6 +8,7 @@ services:
       - .env
     volumes:
       - .:/app
+      - /app/scatter/next-app/node_modules
     working_dir: /app
     environment:
       - FLASK_APP=web.app
