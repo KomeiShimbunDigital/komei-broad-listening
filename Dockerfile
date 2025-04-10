@@ -30,7 +30,7 @@ COPY . .
 
 # Pythonの依存関係をインストール
 RUN pip install --upgrade pip && pip install \
-    --no-cache-dir -r scatter/requirements.txt
+    --no-cache-dir -r requirements.txt
 
 # JavaScriptの依存関係をインストール
 RUN cd scatter/next-app && npm install
@@ -38,7 +38,5 @@ RUN cd scatter/next-app && npm install
 # NLTKのデータをダウンロード
 RUN python -c "import nltk; nltk.download('stopwords')"
 
-# pipeline ディレクトリに戻す（ENTRYPOINT用）
-WORKDIR /app/scatter/pipeline
-
-CMD ["bash"]
+EXPOSE 8080
+CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=8080"]

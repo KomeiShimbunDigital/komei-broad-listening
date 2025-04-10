@@ -1,0 +1,77 @@
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash
+import os
+import subprocess
+from werkzeug.utils import secure_filename
+
+app = Flask(__name__)
+app.secret_key = 'supersecretkey'  # フラッシュメッセージ用
+
+# パス設定
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+INPUT_DIR = os.path.join(BASE_DIR, 'scatter/pipeline/inputs')
+CONFIG_DIR = os.path.join(BASE_DIR, 'scatter/pipeline/configs')
+OUTPUT_DIR = os.path.join(BASE_DIR, 'scatter/pipeline/outputs')
+MAIN_SCRIPT = os.path.join(BASE_DIR, 'scatter/pipeline/main.py')
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    project = request.form['project']
+    csv_file = request.files['csv']
+    config_file = request.files['config']
+
+    if not project or not csv_file or not config_file:
+        flash('すべてのフィールドを入力してください。')
+        return redirect(url_for('index'))
+
+    csv_filename = f"{secure_filename(project)}.csv"
+    json_filename = f"{secure_filename(project)}.json"
+
+    csv_path = os.path.join(INPUT_DIR, csv_filename)
+    config_path = os.path.join(CONFIG_DIR, json_filename)
+
+    csv_file.save(csv_path)
+    config_file.save(config_path)
+
+    flash(f"'{project}' のデータと設定ファイルをアップロードしました。")
+    return redirect(url_for('index'))
+
+
+@app.route('/run', methods=['POST'])
+def run_analysis():
+    project = request.form['project']
+    config_path = os.path.join(CONFIG_DIR, f"{secure_filename(project)}.json")
+
+    if not os.path.exists(config_path):
+        flash(f"設定ファイルが見つかりません: {config_path}")
+        return redirect(url_for('index'))
+
+    try:
+        subprocess.run(['python', MAIN_SCRIPT, f'configs/{project}.json', '--skip-interaction'],
+                       cwd=os.path.join(BASE_DIR, 'scatter/pipeline'),
+                       check=True)
+        flash(f"'{project}' の分析を実行しました。")
+        return redirect(url_for('results', project=project))
+    except subprocess.CalledProcessError as e:
+        flash(f"分析中にエラーが発生しました: {e}")
+        return redirect(url_for('index'))
+
+
+@app.route('/results/<project>')
+def results(project):
+    report_path = os.path.join(OUTPUT_DIR, project, 'report')
+    index_file = os.path.join(report_path, 'index.html')
+
+    if not os.path.exists(index_file):
+        return f"レポートが存在しません: {index_file}", 404
+
+    return send_from_directory(report_path, 'index.html')
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)

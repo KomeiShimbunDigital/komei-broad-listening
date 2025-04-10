@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Broad Listening コンソール</title>
+</head>
+<body>
+    <h1>Broad Listening コンソール</h1>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul style="color: red;">
+        {% for msg in messages %}
+        <li>{{ msg }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <h3>1. データと設定をアップロード</h3>
+        プロジェクト名: <input type="text" name="project"><br>
+        データCSV: <input type="file" name="csv"><br>
+        設定JSON: <input type="file" name="config"><br>
+        <input type="submit" value="アップロード">
+    </form>
+
+    <form action="/run" method="post">
+        <h3>2. 分析を実行</h3>
+        プロジェクト名: <input type="text" name="project"><br>
+        <input type="submit" value="分析実行">
+    </form>
+</body>
+</html>
