@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash
+from flask import Flask, render_template,render_template_string, request, redirect, url_for, send_from_directory, flash
 import os
 import subprocess
 from werkzeug.utils import secure_filename
@@ -11,6 +11,7 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 INPUT_DIR = os.path.join(BASE_DIR, 'scatter/pipeline/inputs')
 CONFIG_DIR = os.path.join(BASE_DIR, 'scatter/pipeline/configs')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'scatter/pipeline/outputs')
+OUTPUT_BASE_DIR = os.path.join(os.getcwd(), 'scatter/pipeline/outputs')
 MAIN_SCRIPT = os.path.join(BASE_DIR, 'scatter/pipeline/main.py')
 
 
@@ -62,15 +63,20 @@ def run_analysis():
         return redirect(url_for('index'))
 
 
-@app.route('/results/<project>')
-def results(project):
-    report_path = os.path.join(OUTPUT_DIR, project, 'report')
-    index_file = os.path.join(report_path, 'index.html')
+@app.route('/results/<project>/_next/<path:filename>')
+def next_static_scoped(project, filename):
+    static_dir = os.path.join(OUTPUT_BASE_DIR, project, 'report', '_next')
+    return send_from_directory(static_dir, filename)
 
-    if not os.path.exists(index_file):
-        return f"レポートが存在しません: {index_file}", 404
-
-    return send_from_directory(report_path, 'index.html')
+# 結果HTMLの表示
+@app.route('/results/<project>/')
+def serve_report(project):
+    report_path = os.path.join(OUTPUT_BASE_DIR, project, 'report', 'index.html')
+    if not os.path.exists(report_path):
+        return "Report not found", 404
+    with open(report_path, 'r', encoding='utf-8') as f:
+        html = f.read()
+    return render_template_string(html)
 
 
 if __name__ == '__main__':
