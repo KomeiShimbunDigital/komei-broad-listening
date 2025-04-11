@@ -1,7 +1,7 @@
 import json
 
 import pandas as pd
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from tqdm import tqdm
 
 from utils import messages
@@ -111,7 +111,7 @@ def translation(config):
         "overview",
     ]
 
-    japanese_ui = [JAPANESE_UI_MAP[key] for key in UI_copy]
+    japanese_ui = [JAPANESE_UI_MAP.get(key, key) for key in UI_copy]
     arg_list = (
         arguments["argument"].to_list()
         + labels["label"].to_list()
@@ -168,11 +168,22 @@ def translate_lang(arg_list, batch_size, prompt, lang, model):
 def translate_batch(batch, lang_prompt, model, retries=3):
     llm = ChatOpenAI(model_name=model, temperature=0.0)
     input = json.dumps(list(batch))
-    response = llm(messages=messages(lang_prompt, input)).content.strip()
+
+    try:
+        response = llm.invoke(messages(lang_prompt, input)).content.strip()
+    except Exception as e:
+        print("LLM呼び出しエラー:", e)
+        if retries > 0:
+            print("Retrying batch...")
+            return translate_batch(batch, lang_prompt, model, retries - 1)
+        else:
+            raise  # ← ここで e を明示せず再スロー
+
     if "```" in response:
         response = response.split("```")[1]
     if response.startswith("json"):
         response = response[4:]
+
     try:
         parsed = [a.strip() for a in json.loads(response)]
         if len(parsed) != len(batch):
@@ -186,14 +197,18 @@ def translate_batch(batch, lang_prompt, model, retries=3):
             if len(batch) > 1:
                 print("Retrying with smaller batches...")
                 mid = len(batch) // 2
-                return translate_batch(
-                    batch[:mid], lang_prompt, model, retries - 1
-                ) + translate_batch(batch[mid:], lang_prompt, model, retries - 1)
-            else:
-                print("Retrying batch...")
+                return (
+                    translate_batch(batch[:mid], lang_prompt, model, retries - 1)
+                    + translate_batch(batch[mid:], lang_prompt, model, retries - 1)
+                )
+            elif retries > 0:
+                print("Retrying single item batch...")
                 return translate_batch(batch, lang_prompt, model, retries - 1)
+            else:
+                raise ValueError("Failed to translate single item after retries.")
         else:
             return parsed
+
     except json.decoder.JSONDecodeError as e:
         print("JSON error:", e)
         print("Response was:", response)
@@ -201,4 +216,4 @@ def translate_batch(batch, lang_prompt, model, retries=3):
             print("Retrying batch...")
             return translate_batch(batch, lang_prompt, model, retries - 1)
         else:
-            raise e
+            raise  # ← ここも e ではなく raise 単体
