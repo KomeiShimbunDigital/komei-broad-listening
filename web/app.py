@@ -17,8 +17,32 @@ MAIN_SCRIPT = os.path.join(BASE_DIR, 'scatter/pipeline/main.py')
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    projects = []
+    for file in os.listdir(CONFIG_DIR):
+        if file.endswith('.json'):
+            name = file[:-5]
+            output_path = os.path.join(OUTPUT_DIR, name, 'report', 'index.html')
+            has_output = os.path.exists(output_path)
+            projects.append({'name': name, 'has_output': has_output})
+    return render_template('index.html', projects=projects)
 
+@app.route('/delete', methods=['POST'])
+def delete_project():
+    project = request.form['project']
+    csv_path = os.path.join(INPUT_DIR, f"{project}.csv")
+    config_path = os.path.join(CONFIG_DIR, f"{project}.json")
+    output_path = os.path.join(OUTPUT_DIR, project)
+
+    for path in [csv_path, config_path, output_path]:
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                import shutil
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
+
+    flash(f"'{project}' を削除しました。")
+    return redirect(url_for('index'))
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -57,11 +81,10 @@ def run_analysis():
                        cwd=os.path.join(BASE_DIR, 'scatter/pipeline'),
                        check=True)
         flash(f"'{project}' の分析を実行しました。")
-        return redirect(url_for('results', project=project))
+        return redirect(url_for('serve_report', project=project))  # ← 修正！
     except subprocess.CalledProcessError as e:
         flash(f"分析中にエラーが発生しました: {e}")
         return redirect(url_for('index'))
-
 
 @app.route('/results/<project>/_next/<path:filename>')
 def next_static_scoped(project, filename):
