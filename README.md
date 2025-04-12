@@ -1,8 +1,9 @@
 # Komei Broad Listening Tools
 
-## 改良の概要
 komei-broad-listeningは、安野たかひろ氏の選挙対策チームが改良した「Talk to the City（[TTTC](https://github.com/AIObjectives/talk-to-the-city-reports)）」の改良版である「[anno-broadlistening](https://github.com/takahiroanno2024/anno-broadlistening)」をベースに、以下の主要な改良を加えたプロジェクトです。anno-broadlisteningの機能強化版として、UIの改善、Docker環境の整備、プロジェクト管理機能の追加などの改良を実施。これにより、ユーザーはより直感的で効率的なデータ分析と管理をできるようにしました。
 
+
+## 改良の概要
 
 ### 1. **プロジェクト管理用のUI追加**
 Flaskを用いたWebベースの管理画面を新たに実装し、プロジェクトの新規追加、分析処理、結果閲覧、削除などをブラウザ上で操作可能にしました。
@@ -56,10 +57,10 @@ docker-compose up --build
 ```
 4. 管理画面にアクセス: http://localhost:8080
 
-## anno-broadlisting
+## anno-broadlistening
 anno-broadlisteningとTTTCの改良点については[DIFFERENCES.md](/DIFFERENCES.md)を参照
 その他、ドキュメントファイルなどはanno-broadlisteningをそのまま引き継いでいます。
 
 ## Talk to the City Reports
-Talk to the City（[TTTC](https://github.com/AIObjectives/talk-to-the-city-reports)）
+Talk to the City（TTTC）
 CLIでレポートを出力するアプリケーションです。Pythonとnextをベースにしており、静的でインタラクティブな散布図レポートとサマリーを生成します。
