@@ -5,7 +5,7 @@ komei-broad-listeningは、安野たかひろ氏の選挙対策チームが改�
 
 ### 1. **プロジェクト管理用のUI追加**   
     Flaskを用いたWebベースの管理画面を新たに実装し、プロジェクトの新規追加、分析処理、結果閲覧、削除などをブラウザ上で操作可能にしました。
-    [!管理画面](/docs_komei/images/management_screen.png)
+    ![管理画面](/docs_komei/images/management_screen.png)
 
 ### 2. **Docker環境の整備**    
     Dockerfileおよびdocker-compose.ymlを追加し、環境構築を簡素化。これにより、ローカル環境でのセットアップやデプロイを容易にしました。
