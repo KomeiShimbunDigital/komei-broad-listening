@@ -1,4 +1,4 @@
-from flask import Flask, render_template,render_template_string, request, redirect, url_for, send_from_directory, flash
+from flask import Flask, render_template,render_template_string, request, redirect, url_for, send_from_directory, flash, jsonify
 import os
 import subprocess
 from werkzeug.utils import secure_filename
@@ -102,5 +102,32 @@ def serve_report(project):
     return render_template_string(html)
 
 
+@app.route('/api/run', methods=['POST'])
+def api_run():
+    project = request.form['project']
+    csv_file = request.files['csv']
+    config_file = request.files['config']
+
+    if not project or not csv_file or not config_file:
+        return jsonify({'error': 'All fields are required.'}), 400
+
+    csv_filename = f"{secure_filename(project)}.csv"
+    json_filename = f"{secure_filename(project)}.json"
+
+    csv_path = os.path.join(INPUT_DIR, csv_filename)
+    config_path = os.path.join(CONFIG_DIR, json_filename)
+
+    csv_file.save(csv_path)
+    config_file.save(config_path)
+
+    try:
+        subprocess.run(
+            ['python', MAIN_SCRIPT, f'configs/{project}.json', '--skip-interaction'],
+            cwd=os.path.join(BASE_DIR, 'scatter/pipeline'),
+            check=True
+        )
+        return jsonify({'message': f"Analysis for '{project}' completed."}), 200
+    except subprocess.CalledProcessError as e:
+        return jsonify({'error': f"Error during analysis: {e}"}), 500
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
