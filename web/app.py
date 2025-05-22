@@ -78,8 +78,8 @@ def run_analysis():
 
     try:
         subprocess.run(['python', MAIN_SCRIPT, f'configs/{project}.json', '--skip-interaction'],
-                       cwd=os.path.join(BASE_DIR, 'scatter/pipeline'),
-                       check=True)
+            cwd=os.path.join(BASE_DIR, 'scatter/pipeline'),
+            check=True)
         flash(f"'{project}' の分析を実行しました。")
         return redirect(url_for('serve_report', project=project))  # ← 修正！
     except subprocess.CalledProcessError as e:
@@ -101,33 +101,51 @@ def serve_report(project):
         html = f.read()
     return render_template_string(html)
 
-
 @app.route('/api/run', methods=['POST'])
 def api_run():
+    # Authentication check
+    # if not is_authenticated(request):
+    #     return jsonify({'error': 'Authentication required'}), 401
+        
     project = request.form['project']
     csv_file = request.files['csv']
     config_file = request.files['config']
 
     if not project or not csv_file or not config_file:
         return jsonify({'error': 'All fields are required.'}), 400
+        
+    # Validate file types
+    if not csv_file.filename.endswith('.csv'):
+        return jsonify({'error': 'Invalid CSV file format'}), 400
+    if not config_file.filename.endswith('.json'):
+        return jsonify({'error': 'Invalid config file format'}), 400
 
     csv_filename = f"{secure_filename(project)}.csv"
     json_filename = f"{secure_filename(project)}.json"
 
     csv_path = os.path.join(INPUT_DIR, csv_filename)
     config_path = os.path.join(CONFIG_DIR, json_filename)
+    
+    # Check if files already exist
+    if os.path.exists(csv_path) or os.path.exists(config_path):
+        return jsonify({'error': 'Project already exists'}), 409
 
     csv_file.save(csv_path)
     config_file.save(config_path)
 
     try:
-        subprocess.run(
+        # Add timeout to prevent long-running processes
+        result = subprocess.run(
             ['python', MAIN_SCRIPT, f'configs/{project}.json', '--skip-interaction'],
             cwd=os.path.join(BASE_DIR, 'scatter/pipeline'),
-            check=True
+            check=True,
+            timeout=300  # 5-minute timeout
         )
         return jsonify({'message': f"Analysis for '{project}' completed."}), 200
-    except subprocess.CalledProcessError as e:
-        return jsonify({'error': f"Error during analysis: {e}"}), 500
+    except subprocess.CalledProcessError:
+        return jsonify({'error': "Analysis process failed"}), 500
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': "Analysis timed out"}), 504
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
