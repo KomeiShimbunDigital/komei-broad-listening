@@ -142,13 +142,17 @@ def api_run():
             check=True,
             timeout=60*20
         )
-        with open(os.path.join(OUTPUT_DIR, project, 'result.json'), 'r') as f:
-            data = json.load(f)
-        return jsonify({'message': f"Analysis for '{project}' completed.", 'data': data}), 200
+        result_path = os.path.join(OUTPUT_DIR, project, 'result.json')
+        if os.path.exists(result_path):
+            with open(result_path, 'r') as f:
+                data = json.load(f)
+            return jsonify({'message': f"Analysis for '{project}' completed.", 'data': data}), 200
+        else:
+            return jsonify({'message': f"Analysis for '{project}' completed. No result data available."}), 200
     except subprocess.CalledProcessError:
         return jsonify({'error': "Analysis process failed"}), 500
     except subprocess.TimeoutExpired:
-        return jsonify({'error': "Analysis timed out"}), 504
+        return jsonify({'error': "Analysis timed out. No result data available."}), 504
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
