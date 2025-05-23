@@ -15,6 +15,9 @@ Dockerfileおよびdocker-compose.ymlを追加し、環境構築を簡素化。�
 ### 3. **プロジェクトのホスティング機能**
 複数のプロジェクトを一元管理できるようになり、各プロジェクトの分析結果を統合的に閲覧・管理することができます。
 
+### 4. APIを追加
+エンドポイント`/api/run`へのリクエストで、プロジェクト作成と分析実行を行い、生成された`result.json`を返却するプログラム用インターフェース。
+
 
 ## 主な改良点（ファイル変更を含む）
 
@@ -56,6 +59,62 @@ cat .env
 docker-compose up --build
 ```
 4. 管理画面にアクセス: http://localhost:8080
+
+## API
+### POST `/api/run`
+
+#### 説明
+
+このエンドポイントは、指定されたタスクを実行します。クライアントからのPOSTリクエストを受け取り、必要な処理を行います。
+
+#### リクエスト
+
+- **URL**: [`/api/run`]
+- **メソッド**: `POST`
+- **ヘッダー**:
+  - `Content-Type: application/json`
+- **ボディ**:
+  ```json
+  {
+    "project": "string",
+    "csv": "file",
+    "config": "file"
+  }
+
+#### レスポンス
+成功時 (200 OK):
+
+```json
+{
+    'message': f"Analysis for '{project}' completed.",
+    'data': data
+}
+```
+
+エラー時 (400 Bad Request):
+
+```json
+{
+    'error': "Analysis process failed"
+}
+```
+
+### 例
+#### リクエスト
+```bash
+curl -X POST http://localhost:8080/api/run \
+  -F "project=example-project" \
+  -F "csv=@example-project.csv;type=text/csv" \
+  -F "config=@example-project.json;type=application/json"
+```
+
+#### レスポンス
+```json
+{
+    'data':{'clusters':[...],...},
+    'message': f"Analysis for '{project}' completed.",
+}
+```
 
 ## anno-broadlistening
 anno-broadlisteningとTTTCの改良点については[DIFFERENCES.md](/DIFFERENCES.md)を参照
