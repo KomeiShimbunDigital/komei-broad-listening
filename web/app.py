@@ -2,6 +2,7 @@ from flask import Flask, render_template,render_template_string, request, redire
 import os
 import subprocess
 from werkzeug.utils import secure_filename
+import json
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # フラッシュメッセージ用
@@ -139,9 +140,11 @@ def api_run():
             ['python', MAIN_SCRIPT, f'configs/{project}.json', '--skip-interaction'],
             cwd=os.path.join(BASE_DIR, 'scatter/pipeline'),
             check=True,
-            timeout=300  # 5-minute timeout
+            timeout=60*20
         )
-        return jsonify({'message': f"Analysis for '{project}' completed."}), 200
+        with open(os.path.join(OUTPUT_DIR, project, 'result.json'), 'r') as f:
+            data = json.load(f)
+        return jsonify({'message': f"Analysis for '{project}' completed.", 'data': data}), 200
     except subprocess.CalledProcessError:
         return jsonify({'error': "Analysis process failed"}), 500
     except subprocess.TimeoutExpired:
